@@ -66,12 +66,18 @@ public:
         }
         m_sectionName = sec.m_sectionName;
         m_sectionConf = sec.m_sectionConf;
+		m_pre_comment = sec.m_pre_comment;
+		m_next_comment = sec.m_next_comment;
+		m_key_order = sec.m_key_order;
         return *this;
     }
     bool IsValid() { return !m_sectionName.empty(); }
     string GetName() { return m_sectionName; }
     map<string, KeyVal> GetData() { return m_sectionConf; }
 
+	std::vector<std::string> m_key_order;
+	map<string, std::vector<std::string> > m_pre_comment;
+	map<string, std::vector<std::string> > m_next_comment;
 private:
     string   m_sectionName;
     map<string, KeyVal> m_sectionConf;
@@ -98,6 +104,7 @@ private:
 private:
     string m_fileName;
     map<string, Section> m_mapConfig;
+	std::vector<string> m_order_sec;
 };
 
 } // end namespace ini

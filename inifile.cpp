@@ -31,16 +31,21 @@ bool IniFile::Load(string config)
         if (secName.empty()){
             continue;
         }
+		m_order_sec.push_back(secName);
         break;
     }
     lastSecName = secName;
     Section secConf;
     string strline;
+
+	std::vector<std::string> vPreComments;
+	std::vector<std::string> vNextComments;
     do
     {
-    __reboot:
+__reboot:
         Trim(line);
         if (line.empty() || line.find(';') == 0 || line.find('#') == 0){
+			vPreComments.push_back(line);
             continue;
         }
         secName = GetSectionName(line);
@@ -48,6 +53,7 @@ bool IniFile::Load(string config)
             if (lastSecName != secName){
                 m_mapConfig[lastSecName] = secConf;
                 lastSecName = secName;
+				m_order_sec.push_back(secName);
             }
             secConf = Section(secName);
             continue;
@@ -58,6 +64,7 @@ bool IniFile::Load(string config)
         while (getline(in, line)){
             Trim(line);
             if (line.empty() || line.find(';') == 0 || line.find('#') == 0){
+				vNextComments.push_back(line);
                 break;
             }
             string tmp = GetSectionName(line);
@@ -76,6 +83,11 @@ bool IniFile::Load(string config)
         string key = GetKey(strline);
         string svalue = GetValue(strline);
         secConf[key] = svalue;
+		secConf.m_key_order.push_back(key);
+		secConf.m_pre_comment[key] = vPreComments;
+		secConf.m_next_comment[key] = vNextComments;
+		vPreComments.clear();
+		vNextComments.clear();
         if (flag){
             goto __reboot;
         }
@@ -146,16 +158,32 @@ bool IniFile::Flush(string savepath)
         ou.open(savepath.c_str());
     }
     ou.clear();
-    map<string, Section>::iterator itr = m_mapConfig.begin();
-    for (itr; itr != m_mapConfig.end(); itr++){
-        ou << "[" << itr->first << "]" << endl;
-        map<string, KeyVal> data = itr->second.GetData();
-        map<string, KeyVal>::iterator it = data.begin();
-        for (it; it != data.end(); it++){
-            ou << it->first << " = " << it->second.Get() << endl;
-        }
-        ou << endl;
-    }
+
+	for (int i = 0; i < m_order_sec.size(); i++){
+		std::string secname = m_order_sec[i];
+		Section& sec = m_mapConfig[secname];
+		ou << "[" << secname << "]" << endl;
+		map<string, KeyVal> data = sec.GetData();
+
+		for (int j = 0; j < sec.m_key_order.size(); j++) {
+			std::string key = sec.m_key_order[j];
+
+			std::vector<std::string> vprcomm = sec.m_pre_comment[key];
+			std::vector<std::string> vnextcomm = sec.m_next_comment[key];
+			if (vprcomm.size() > 0 ) {
+				for (int k = 0; k < vprcomm.size(); k++){
+					ou << vprcomm[k] << std::endl;
+				}
+			}
+			ou << key << " = " << data[key].Get() << endl;
+			if (vnextcomm.size() > 0 ) {
+				for (int k = 0; k < vnextcomm.size(); k++){
+					ou << vnextcomm[k] << std::endl;
+				}
+			}
+		}
+		ou << endl;
+	}
     ou.close();
     return true;
 }
