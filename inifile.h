@@ -27,16 +27,16 @@ public:
         return tmp;
     }
     template<typename T>
-    T GetValue(T default = T()) {
+    T GetValue(T defval = T()) {
         if (m_strVal.empty()) {
-            return default;
+            return defval;
         }
         return StringTo<T>(m_strVal);
     }
     template<typename T>
-    vector<T> GetArray(string default = string(), char sep = char()) {
+    vector<T> GetArray(string defval = string(), char sep = char()) {
         if (m_strVal.empty()) {
-            m_strVal = default;
+            m_strVal = defval;
         }
         vector<T> vRet;
         istringstream iss(m_strVal);
